@@ -1,0 +1,13 @@
+# Fichiers temporaires
+__pycache__/
+*.pyc
+
+# Environnement virtuel
+venv/
+.env
+
+# Fichiers système
+.DS_Store
+
+# CSV générés
+data/*.csv
