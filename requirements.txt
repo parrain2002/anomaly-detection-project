@@ -1,2 +1,5 @@
 faker
 pandas
+jupyter
+matplotlib
+seaborn
