@@ -3,3 +3,14 @@ pandas
 jupyter
 matplotlib
 seaborn
+fastapi
+uvicorn[standard]
+scikit-learn
+numpy
+python-multipart
+joblib
+pydantic
+celery
+redis
+
+
