@@ -6,20 +6,25 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 import numpy as np
+import os
+
+# Obtenir le chemin du répertoire parent (la racine du projet)
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+model_dir = os.path.join(root_dir, "model")
 
 # Charger les modèles et les pipelines au démarrage du module
 try:
-    with open("model/isolation_forest.pkl", "rb") as f:
+    with open(os.path.join(model_dir, "isolation_forest.pkl"), "rb") as f:
         isolation_forest_model = pickle.load(f)
-    with open("model/one_class_svm.pkl", "rb") as f:
+    with open(os.path.join(model_dir, "one_class_svm.pkl"), "rb") as f:
         one_class_svm_model = pickle.load(f)
-    with open("model/preprocessing_pipeline.pkl", "rb") as f:
+    with open(os.path.join(model_dir, "preprocessing_pipeline.pkl"), "rb") as f:
         preprocessor_isoforest = joblib.load(f)
-    with open("model/preprocessing_pipeline_svm.pkl", "rb") as f:
+    with open(os.path.join(model_dir, "preprocessing_pipeline_svm.pkl"), "rb") as f:
         preprocessor_svm = joblib.load(f)
-    print("Modèles et pipelines chargés avec succès.")
+    print("Modèles et pipelines chargés avec succès depuis:", model_dir)
 except FileNotFoundError as e:
-    print(f"Erreur lors du chargement des modèles ou des pipelines : {e}")
+    print(f"Erreur lors du chargement des modèles ou des pipelines depuis {model_dir}: {e}")
     isolation_forest_model = None
     one_class_svm_model = None
     preprocessor_isoforest = None
