@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tableau de Bord d'Anomalies</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Logs d'Anomalies</h1>
+
+    <h2>Nombre d'Anomalies par Heure</h2>
+    <canvas id="anomaliesParHeureChart"></canvas>
+
+    <h2>Types d'Endpoints Anormaux</h2>
+    <canvas id="endpointsAnormauxChart"></canvas>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Modèle</th>
+                <th>IP</th>
+                <th>Endpoint</th>
+                <th>Statut</th>
+                <th>Résultat</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.timestamp }}</td>
+                <td>{{ log.model_type }}</td>
+                <td>{{ log.ip }}</td>
+                <td>{{ log.endpoint }}</td>
+                <td>{{ log.status }}</td>
+                <td>{{ log.result }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        const logs = {{ logs | tojson }}; // Récupérer les logs depuis Flask et les convertir en JSON
+
+        // Préparer les données pour le graphique du nombre d'anomalies par heure
+        const anomaliesParHeureData = {};
+        logs.forEach(log => {
+            const timestamp = new Date(log.timestamp);
+            const hour = timestamp.getHours();
+            anomaliesParHeureData[hour] = (anomaliesParHeureData[hour] || 0) + 1;
+        });
+
+        const heures = Object.keys(anomaliesParHeureData).sort((a, b) => parseInt(a) - parseInt(b));
+        const counts = heures.map(heure => anomaliesParHeureData[heure]);
+
+        const anomaliesParHeureCtx = document.getElementById('anomaliesParHeureChart').getContext('2d');
+        const anomaliesParHeureChart = new Chart(anomaliesParHeureCtx, {
+            type: 'bar',
+            data: {
+                labels: heures,
+                datasets: [{
+                    label: 'Nombre d\'Anomalies',
+                    data: counts,
+                    backgroundColor: 'rgba(255, 99, 132, 0.7)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Nombre d\'Anomalies'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Heure'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Préparer les données pour le graphique des types d'endpoints anormaux
+        const endpointsAnormauxData = {};
+        logs.forEach(log => {
+            endpointsAnormauxData[log.endpoint] = (endpointsAnormauxData[log.endpoint] || 0) + 1;
+        });
+
+        const endpoints = Object.keys(endpointsAnormauxData).sort((a, b) => endpointsAnormauxData[b] - endpointsAnormauxData[a]).slice(0, 10); // Top 10
+        const endpointCounts = endpoints.map(endpoint => endpointsAnormauxData[endpoint]);
+
+        const endpointsAnormauxCtx = document.getElementById('endpointsAnormauxChart').getContext('2d');
+        const endpointsAnormauxChart = new Chart(endpointsAnormauxCtx, {
+            type: 'pie',
+            data: {
+                labels: endpoints,
+                datasets: [{
+                    label: 'Nombre d\'Anomalies',
+                    data: endpointCounts,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 159, 64, 0.7)',
+                        'rgba(199, 21, 133, 0.7)',
+                        'rgba(0, 128, 0, 0.7)',
+                        'rgba(218, 165, 32, 0.7)',
+                        'rgba(128, 0, 128, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(199, 21, 133, 1)',
+                        'rgba(0, 128, 0, 1)',
+                        'rgba(218, 165, 32, 1)',
+                        'rgba(128, 0, 128, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        position: 'right',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Répartition des Endpoints Anormaux (Top 10)'
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

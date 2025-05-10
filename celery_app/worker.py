@@ -1,20 +1,22 @@
-# worker.py
-import eventlet
-eventlet.monkey_patch()
-
-from celery import Celery
+from celery_app.celery_instance import celery
 import joblib
 import pickle
 import pandas as pd
+import os
 
-app = Celery("tasks", broker="redis://localhost:6379/0", backend="redis://localhost:6379/0")
+# Déterminer le chemin absolu du dossier racine du projet
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # <-- remonte d'un niveau depuis celery_app/
+model_dir = os.path.join(BASE_DIR, "..", "model")      # <-- va vers ../model/
+model_dir = os.path.abspath(model_dir)                 # <-- convertit en chemin absolu
+
+print(f"Chemin du dossier modèle utilisé : {model_dir}")
 
 # Charger le pipeline et modèles
 try:
-    pipeline = joblib.load("../model/preprocessing_pipeline.pkl")
-    with open("../model/isolation_forest.pkl", "rb") as f:
+    pipeline = joblib.load(os.path.join(model_dir, "preprocessing_pipeline.pkl"))
+    with open(os.path.join(model_dir, "isolation_forest.pkl"), "rb") as f:
         isolation_model = pickle.load(f)
-    with open("../model/one_class_svm.pkl", "rb") as f:
+    with open(os.path.join(model_dir, "one_class_svm.pkl"), "rb") as f:
         svm_model = pickle.load(f)
     print("Worker: Modèles et pipeline chargés avec succès.")
 except FileNotFoundError as e:
@@ -23,10 +25,10 @@ except FileNotFoundError as e:
     isolation_model = None
     svm_model = None
 
-@app.task
-def predict_task(log_dict, model_type):
+@celery.task
+def predict_task(model_type: str, log_dict: dict):
     if pipeline is None or isolation_model is None or svm_model is None:
-        return "Worker: Modèles ou pipeline non chargés. Impossible de prédire."
+        return {"prediction": "Modèles ou pipeline non chargés. Impossible de prédire."}
 
     df = pd.DataFrame([log_dict])
     try:
@@ -35,6 +37,8 @@ def predict_task(log_dict, model_type):
 
         model = isolation_model if model_type == "isolation_forest" else svm_model
         pred = model.predict([features[0]])[0]
-        return "anomalie" if pred == -1 else "normal"
+        result = "anomalie" if pred == -1 else "normal"
+        return {"prediction": result}
     except Exception as e:
-        return f"Worker: Erreur lors de la prédiction: {e}"
+        return {"error": f"Worker: Erreur lors de la prédiction: {e}"}
+
